@@ -329,8 +329,34 @@ function toUsage(raw: Record<string, unknown>): CliUsage | undefined {
   const input = pick("input_tokens") ?? pick("inputTokens");
   const output = pick("output_tokens") ?? pick("outputTokens");
   const cacheRead =
-    pick("cache_read_input_tokens") ?? pick("cached_input_tokens") ?? pick("cacheRead");
-  const cacheWrite = pick("cache_write_input_tokens") ?? pick("cacheWrite");
+    pick("cache_read_input_tokens") ??
+    pick("cached_input_tokens") ??
+    pick("cacheRead") ??
+    // OpenAI Responses API shape.
+    (isRecord(raw.input_tokens_details) &&
+    typeof raw.input_tokens_details.cached_tokens === "number" &&
+    raw.input_tokens_details.cached_tokens > 0
+      ? raw.input_tokens_details.cached_tokens
+      : undefined) ??
+    (isRecord(raw.prompt_tokens_details) &&
+    typeof raw.prompt_tokens_details.cached_tokens === "number" &&
+    raw.prompt_tokens_details.cached_tokens > 0
+      ? raw.prompt_tokens_details.cached_tokens
+      : undefined);
+  const cacheWrite =
+    pick("cache_write_input_tokens") ??
+    pick("cache_creation_input_tokens") ??
+    pick("cacheWrite") ??
+    (isRecord(raw.input_tokens_details) &&
+    typeof raw.input_tokens_details.cache_creation_tokens === "number" &&
+    raw.input_tokens_details.cache_creation_tokens > 0
+      ? raw.input_tokens_details.cache_creation_tokens
+      : undefined) ??
+    (isRecord(raw.prompt_tokens_details) &&
+    typeof raw.prompt_tokens_details.cache_creation_tokens === "number" &&
+    raw.prompt_tokens_details.cache_creation_tokens > 0
+      ? raw.prompt_tokens_details.cache_creation_tokens
+      : undefined);
   const total = pick("total_tokens") ?? pick("total");
   if (!input && !output && !cacheRead && !cacheWrite && !total) {
     return undefined;

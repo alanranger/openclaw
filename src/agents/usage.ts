@@ -15,6 +15,15 @@ export type UsageLike = {
   completion_tokens?: number;
   cache_read_input_tokens?: number;
   cache_creation_input_tokens?: number;
+  // OpenAI Responses API (nested) usage details.
+  input_tokens_details?: {
+    cached_tokens?: number;
+    cache_creation_tokens?: number;
+  };
+  prompt_tokens_details?: {
+    cached_tokens?: number;
+    cache_creation_tokens?: number;
+  };
   // Some agents/logs emit alternate naming.
   totalTokens?: number;
   total_tokens?: number;
@@ -64,9 +73,24 @@ export function normalizeUsage(raw?: UsageLike | null): NormalizedUsage | undefi
       raw.completionTokens ??
       raw.completion_tokens,
   );
-  const cacheRead = asFiniteNumber(raw.cacheRead ?? raw.cache_read ?? raw.cache_read_input_tokens);
+  const cacheRead = asFiniteNumber(
+    raw.cacheRead ??
+      raw.cache_read ??
+      raw.cache_read_input_tokens ??
+      // Some agents/logs emit alternate naming.
+      (raw as { cached_input_tokens?: number }).cached_input_tokens ??
+      // OpenAI Responses API shape.
+      raw.input_tokens_details?.cached_tokens ??
+      raw.prompt_tokens_details?.cached_tokens,
+  );
   const cacheWrite = asFiniteNumber(
-    raw.cacheWrite ?? raw.cache_write ?? raw.cache_creation_input_tokens,
+    raw.cacheWrite ??
+      raw.cache_write ??
+      raw.cache_creation_input_tokens ??
+      (raw as { cache_write_input_tokens?: number }).cache_write_input_tokens ??
+      // Some providers may report cache creation nested (nonstandard, but cheap to support).
+      raw.input_tokens_details?.cache_creation_tokens ??
+      raw.prompt_tokens_details?.cache_creation_tokens,
   );
   const total = asFiniteNumber(raw.total ?? raw.totalTokens ?? raw.total_tokens);
 

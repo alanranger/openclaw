@@ -34,6 +34,22 @@ describe("normalizeUsage", () => {
     });
   });
 
+  it("normalizes OpenAI Responses API cached token details", () => {
+    const usage = normalizeUsage({
+      input_tokens: 9,
+      input_tokens_details: { cached_tokens: 123 },
+      output_tokens: 11,
+      total_tokens: 20,
+    });
+    expect(usage).toEqual({
+      input: 9,
+      output: 11,
+      cacheRead: 123,
+      cacheWrite: undefined,
+      total: 20,
+    });
+  });
+
   it("returns undefined for empty usage objects", () => {
     expect(normalizeUsage({})).toBeUndefined();
   });
